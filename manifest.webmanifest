@@ -1,1 +1,16 @@
-{"name":"FIX TO FIX Navigation Trainer","short_name":"FIX TO FIX Trainer","start_url":"./index.html","display":"standalone","background_color":"#eef3f8","theme_color":"#12263a","lang":"es"}
+{
+  "id": "/fix-to-fix/",
+  "name": "FIX TO FIX Navigation Trainer",
+  "short_name": "FIX TO FIX",
+  "description": "Herramienta didáctica de navegación VOR/DME",
+  "lang": "es-AR",
+  "start_url": "/fix-to-fix/",
+  "scope": "/fix-to-fix/",
+  "display": "standalone",
+  "background_color": "#eef3f8",
+  "theme_color": "#12263a",
+  "icons": [
+    {"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
+  ]
+}
