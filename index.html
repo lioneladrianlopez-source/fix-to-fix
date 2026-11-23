@@ -1,0 +1,123 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#12263a"><title>FIX TO FIX Navigation Trainer</title><link rel="manifest" href="manifest.webmanifest"><style>
+:root{font-family:system-ui,Arial,sans-serif;color:#172b42;background:#eef3f8}*{box-sizing:border-box}body{margin:0}header{background:#12263a;color:white;padding:19px max(16px,calc((100vw - 1100px)/2))}header h1{font-size:1.35rem;margin:0}header small{opacity:.8}.layout{max-width:1100px;margin:20px auto;padding:0 14px;display:grid;grid-template-columns:340px 1fr;gap:16px}.panel{background:white;border-radius:12px;padding:18px;box-shadow:0 2px 10px #15273a12}h2{font-size:1.05rem;margin:0 0 12px}h3{font-size:.94rem;margin:18px 0 8px}label{display:block;font-size:.84rem;margin-bottom:4px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:9px}input,select{width:100%;padding:10px;border:1px solid #b8c5d2;border-radius:7px;font-size:1rem}button{border:0;border-radius:7px;padding:10px 12px;background:#1762a0;color:white;cursor:pointer;font-weight:600}button.secondary{background:#e7eef6;color:#173d61}button:disabled{opacity:.45;cursor:not-allowed}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.switch{display:flex;gap:8px;margin-bottom:12px}.switch button{flex:1}.switch button:not(.selected){background:#e7eef6;color:#173d61}.hint{font-size:.8rem;color:#546779;line-height:1.5}.error{color:#ad2b28;font-size:.85rem;min-height:1.3em}.results{display:grid;grid-template-columns:1fr 1fr;gap:10px}.metric{background:#f0f6fb;padding:12px;border-radius:8px}.metric small{display:block;color:#52677a}.metric strong{font-size:1.45rem;font-variant-numeric:tabular-nums}.drawing{width:100%;height:auto;background:#fbfdff;border:1px solid #dbe4ee;border-radius:9px}.check{display:flex;align-items:center;gap:7px;margin-top:12px;font-size:.9rem}.check input{width:auto}.status{font-size:.82rem;margin-top:10px}.foot{max-width:1100px;margin:0 auto 30px;padding:0 14px;font-size:.78rem;color:#596b7d}[hidden]{display:none!important}.gps-only{display:none}body.gps .gps-only{display:block}body.gps .manual-only{display:none}@media(max-width:750px){.layout{grid-template-columns:1fr}.panel{padding:15px}}
+</style></head><body><header><h1>FIX TO FIX Navigation Trainer</h1><small>Herramienta didáctica · Navegación directa a un punto</small></header><main class="layout"><section class="panel"><h2>Datos del ejercicio</h2><div class="switch"><button id="manualBtn" class="selected">Manual</button><button id="gpsBtn">GPS en vivo</button></div><div class="manual-only"><h3>Posición actual</h3><div class="fields"><div><label for="r1">Radial (°)</label><input id="r1" type="number" min="0" max="359.999" step="any" value="120"></div><div><label for="d1">Distancia (NM)</label><input id="d1" type="number" min="0" step="any" value="40"></div></div></div><div class="gps-only"><h3>Estación de referencia</h3><div class="fields"><div><label for="lat">Latitud VOR (°)</label><input id="lat" type="number" step="any" placeholder="Ej. -32.3"></div><div><label for="lon">Longitud VOR (°)</label><input id="lon" type="number" step="any" placeholder="Ej. -65.0"></div></div><div style="margin-top:8px"><label for="variation">Variación magnética (°; E positiva, O negativa)</label><input id="variation" type="number" step="any" value="0"></div><p class="hint">Ingresá coordenadas verificadas de la estación y la variación magnética correspondiente. La posición GPS se calcula en tiempo real; la posición de destino se proyecta a partir del VOR.</p><button id="startGps">Activar GPS</button> <button class="secondary" id="stopGps">Detener</button><div id="gpsStatus" class="status">GPS inactivo.</div></div><h3>Punto de destino (referido al VOR)</h3><div class="fields"><div><label for="r2">Radial (°)</label><input id="r2" type="number" min="0" max="359.999" step="any" value="60"></div><div><label for="d2">Distancia (NM)</label><input id="d2" type="number" min="0" step="any" value="25"></div></div><h3>Presentación</h3><label for="view">Vista gráfica</label><select id="view"><option value="simple">Simple</option><option value="radials">Radiales y distancias</option><option value="compass">Rosa de 360°</option></select><label class="check"><input type="checkbox" id="showDme" checked> Mostrar círculos DME</label><label class="check"><input type="checkbox" id="hide"> Ocultar solución (modo instructor)</label><label class="check"><input type="checkbox" id="simulate"> Simular desplazamiento del avión (manual)</label>
+<label class="check"><input type="checkbox" id="showHold"> Mostrar espera en el destino</label>
+<div id="holdInputs" hidden>
+  <div class="fields">
+    <div><label for="holdCourse">Dirección de la espera desde el fijo (° magnéticos)</label><input id="holdCourse" type="number" min="0" max="360" step="any" placeholder="Ej. 180"></div>
+    <div><label for="holdTurn">Sentido de viraje</label><select id="holdTurn"><option value="right">Derecha</option><option value="left">Izquierda</option></select></div>
+  </div>
+</div>
+<div class="actions"><button id="reset" class="secondary">Restablecer</button><button id="copy" class="secondary">Copiar resultado</button></div><div id="error" class="error" aria-live="polite"></div></section><section class="panel"><h2>Representación geométrica</h2><svg id="diagram" class="drawing" viewBox="0 0 640 470" role="img" aria-label="Representación de estación VOR, posición actual y punto de destino"></svg><p class="hint">Norte arriba. Los segmentos VOR–avión y VOR–destino se muestran según la vista elegida. La flecha roja indica la derrota directa del avión al fijo. Los círculos DME corresponden a la posición actual (azul discontinuo) y al destino (verde). El circuito violeta de espera es esquemático.</p><div class="results" id="results"><div class="metric"><small>Derrota al destino (magnética)</small><strong id="bearing">—</strong></div><div class="metric"><small>Distancia directa</small><strong id="distance">—</strong></div><div class="metric gps-only"><small>Trayectoria GPS (verdadera)</small><strong id="track">—</strong></div><div class="metric gps-only"><small>Velocidad GPS</small><strong id="speed">—</strong></div></div><div id="simControls" class="manual-only" style="display:none"><h3>Simulación</h3><label for="progress">Avance hacia el destino: <span id="percent">0%</span></label><input id="progress" type="range" min="0" max="100" value="0"><div class="actions"><button id="play">Reproducir</button><button class="secondary" id="pause">Pausar</button></div></div>
+<section id="holdPanel" hidden>
+  <h3>Espera sobre el fijo</h3>
+  <p id="holdSequence" aria-live="polite"></p>
+  <svg id="holdDiagram" class="drawing" viewBox="0 0 360 310" role="img" aria-label="Circuito de espera centrado en el fijo" hidden></svg>
+  <p class="hint">Norte magnético arriba. Esquema del circuito una vez establecido, sin escala ni corrección de viento. La dirección se mide desde el fijo hacia el lado de la espera. El curso de regreso es el recíproco. Para uso operativo seguí la carta y la autorización ATC.</p>
+</section>
+<p class="hint" id="mathNote">Cálculo plano local para enseñanza. Distancias DME tratadas como horizontales.</p></section></main><p class="foot">Uso educativo exclusivamente. No utilizar como fuente primaria de navegación. La geolocalización requiere permiso del usuario y normalmente HTTPS; puede no funcionar sin conexión o en segundo plano. No se envían coordenadas a un servidor.</p><script>
+'use strict';const $=id=>document.getElementById(id),rad=Math.PI/180,R=3440.065;let mode='manual',watch=null,gps=null,playing=null;
+const exerciseInputs = ['r1', 'd1', 'r2', 'd2'];
+exerciseInputs.forEach(id => $(id).addEventListener('input', () => {
+  stopPlay();
+  $('progress').value = 0;
+  render();
+}));
+const displayInputs = ['lat', 'lon', 'variation', 'view', 'showDme', 'simulate', 'progress'];
+displayInputs.forEach(id => $(id).addEventListener('input', render));
+$('manualBtn').onclick=()=>switchMode('manual');$('gpsBtn').onclick=()=>switchMode('gps');function switchMode(m){mode=m;document.body.classList.toggle('gps',m==='gps');$('manualBtn').classList.toggle('selected',m==='manual');$('gpsBtn').classList.toggle('selected',m==='gps');stopPlay();render()}
+function read(id,min,max){let el=$(id),v=Number(el.value);if(el.value.trim()===''||!Number.isFinite(v)||v<min||v>max)throw Error('Dato inválido: '+(el.labels?.[0]?.textContent||id));return v}const norm=a=>(a%360+360)%360;function localPoint(r,d){return{x:d*Math.sin(r*rad),y:d*Math.cos(r*rad)}}function destinationGPS(lat,lon,bearing,d){const a=d/R,p1=lat*rad,l1=lon*rad,b=bearing*rad,p2=Math.asin(Math.sin(p1)*Math.cos(a)+Math.cos(p1)*Math.sin(a)*Math.cos(b)),l2=l1+Math.atan2(Math.sin(b)*Math.sin(a)*Math.cos(p1),Math.cos(a)-Math.sin(p1)*Math.sin(p2));return{lat:p2/rad,lon:((l2/rad+540)%360)-180}}function inverse(lat1,lon1,lat2,lon2){let p1=lat1*rad,p2=lat2*rad,dl=(lon2-lon1)*rad,dp=p2-p1,a=Math.sin(dp/2)**2+Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2,d=2*R*Math.atan2(Math.sqrt(a),Math.sqrt(Math.max(0,1-a))),b=norm(Math.atan2(Math.sin(dl)*Math.cos(p2),Math.cos(p1)*Math.sin(p2)-Math.sin(p1)*Math.cos(p2)*Math.cos(dl))/rad);return{d,b}}
+function svg(tag,attrs,text){let e=document.createElementNS('http://www.w3.org/2000/svg',tag);Object.entries(attrs||{}).forEach(([k,v])=>e.setAttribute(k,v));if(text!==undefined)e.textContent=text;return e}function draw(p1,p2,view,showDme){let s=$('diagram');s.replaceChildren();const currentDme=Math.hypot(p1.x,p1.y), destinationDme=Math.hypot(p2.x,p2.y);let limit=Math.max(1,currentDme,destinationDme)*1.22,scale=177/limit,cx=320,cy=235,pt=p=>({x:cx+p.x*scale,y:cy-p.y*scale});let a=pt(p1),b=pt(p2),o={x:cx,y:cy};if(view==='compass'){s.append(svg('circle',{cx,cy,r:205,fill:'none',stroke:'#b8c8d8','stroke-width':1}));for(let i=0;i<360;i+=30){let t=i*rad;s.append(svg('line',{x1:cx,y1:cy,x2:cx+205*Math.sin(t),y2:cy-205*Math.cos(t),stroke:'#dce5ed','stroke-dasharray':'3 5'}));let lx=cx+219*Math.sin(t),ly=cy-219*Math.cos(t);s.append(svg('text',{x:lx,y:ly,'text-anchor':'middle','font-size':11,fill:'#63788b'},i===0?'N':i===90?'E':i===180?'S':i===270?'O':String(i)))}}
+if (showDme) {
+  const ring = {cx,cy,fill:'none','stroke-width':2};
+  s.append(
+    svg('circle',{...ring,r:destinationDme*scale,stroke:'#15915c','data-dme':'destination'}),
+    svg('circle',{...ring,r:currentDme*scale,stroke:'#1762a0','stroke-dasharray':'7 5','data-dme':'current'})
+  );
+}
+const hold = readHold();
+if (hold) s.append(holdShape(hold, b.x, b.y, 0.6));
+if(view!=='simple'){[[a,'#64748b'],[b,'#15915c']].forEach(([p,c])=>s.append(svg('line',{x1:cx,y1:cy,x2:p.x,y2:p.y,stroke:c,'stroke-width':2,'stroke-dasharray':'6 5'})))}
+const dx = b.x - a.x;
+const dy = b.y - a.y;
+const length = Math.hypot(dx, dy);
+if (length > 1e-7) {
+  const color = '#c42d36';
+  const angle = Math.atan2(dy, dx) / rad;
+  const arrowSize = Math.min(1, length / 28);
+  s.append(
+    svg('line',{x1:a.x,y1:a.y,x2:b.x,y2:b.y,stroke:color,'stroke-width':4,'stroke-linecap':'round','data-route':'line'}),
+    svg('path',{d:'M 8 0 L -6 -6 L -6 6 Z',fill:color,transform:'translate(' + (a.x + dx/2) + ' ' + (a.y + dy/2) + ') rotate(' + angle + ') scale(' + arrowSize + ')','data-route':'arrow'})
+  );
+}
+[[o,'#64748b','VOR'],[a,'#1762a0','AVIÓN'],[b,'#15915c','DESTINO']].forEach(([p,c,t],i)=>{s.append(svg('circle',{cx:p.x,cy:p.y,r:i===0?6:8,fill:c,stroke:'#fff','stroke-width':2}));let yy=p.y+(i===2?-15:23);yy=Math.max(17,Math.min(456,yy));s.append(svg('text',{x:p.x,y:yy,'text-anchor':'middle','font-size':14,'font-weight':700,fill:c},t))})}
+
+
+function readHold() {
+  const value = $('holdCourse').value.trim();
+  const direction = Number(value);
+  if (!$('showHold').checked || !value || !Number.isFinite(direction) || direction < 0 || direction > 360) return null;
+  return {course: norm(direction + 180), right: $('holdTurn').value === 'right'};
+}
+
+function holdShape({course, right}, x, y, scale) {
+  const offset = right ? 56 : -56;
+  const sweep = right ? 1 : 0;
+  const color = '#65419a';
+  const group = svg('g', {
+    transform: 'translate(' + x + ' ' + y + ') rotate(' + norm(course) + ')' + (scale === 1 ? '' : ' scale(' + scale + ')'),
+    'data-hold': right ? 'right' : 'left'
+  });
+  group.append(
+    svg('path', {d: 'M 0 0 A 28 28 0 0 ' + sweep + ' ' + offset + ' 0 V 85 A 28 28 0 0 ' + sweep + ' 0 85 Z', fill:'none', stroke:color, 'stroke-width':3})
+  );
+  const arrows = [
+    [0, 43, -90],
+    [offset, 43, 90],
+    [offset / 2, -28, right ? 0 : 180],
+    [offset / 2, 113, right ? 180 : 0]
+  ];
+  for (const [ax, ay, angle] of arrows) {
+    group.append(svg('path', {
+      d:'M 7 0 L -5 -5 L -5 5 Z', fill:color,
+      transform:'translate(' + ax + ' ' + ay + ') rotate(' + angle + ')'
+    }));
+  }
+  return group;
+}
+
+function drawHold() {
+  const enabled = $('showHold').checked;
+  const diagram = $('holdDiagram');
+  $('holdInputs').hidden = !enabled;
+  $('holdPanel').hidden = !enabled;
+  diagram.hidden = true;
+  diagram.replaceChildren();
+  if (!enabled) return;
+
+  const hold = readHold();
+  if (!hold) {
+    $('holdSequence').textContent = 'Ingresá la dirección de la espera desde el fijo (0° a 360°).';
+    return;
+  }
+
+  const {course, right} = hold;
+  const side = right ? 'derecha' : 'izquierda';
+  const format = angle => (norm(angle) || 360).toLocaleString('es-AR', {minimumIntegerDigits: 3, maximumFractionDigits: 2}) + '°';
+  $('holdSequence').textContent = 'En el fijo, viraje a la ' + side +
+    ' → alejamiento ' + format(course + 180) + ' M → viraje a la ' + side +
+    ' → acercamiento ' + format(course) + ' M → fijo.';
+  if ($('hide').checked) $('holdSequence').textContent = 'Secuencia oculta (modo instructor).';
+
+  diagram.append(
+    svg('text',{x:180,y:24,'text-anchor':'middle',fill:'#52677a'},'N'),
+    holdShape(hold, 180, 150, 1),
+    svg('circle',{cx:180,cy:150,r:6,fill:'#15915c',stroke:'#fff','stroke-width':2})
+  );
+  diagram.hidden = false;
+}
+['showHold', 'holdCourse', 'holdTurn'].forEach(id => $(id).addEventListener('input', () => { render(); drawHold(); }));
+$('hide').addEventListener('input', () => { render(); drawHold(); });
+function render(){try{let r2=read('r2',0,359.999),d2=read('d2',0,100000),p2=localPoint(r2,d2),p1,bearing,distance;if(mode==='manual'){let r1=read('r1',0,359.999),d1=read('d1',0,100000),start=localPoint(r1,d1);let t=$('simulate').checked?Number($('progress').value)/100:0;p1={x:start.x+(p2.x-start.x)*t,y:start.y+(p2.y-start.y)*t};$('simControls').style.display=$('simulate').checked?'block':'none';$('percent').textContent=Math.round(t*100)+'%';let dx=p2.x-p1.x,dy=p2.y-p1.y;distance=Math.hypot(dx,dy);bearing=norm(Math.atan2(dx,dy)/rad);$('mathNote').textContent='Geometría plana local: radiales magnéticos de una misma estación. Distancias DME aproximadas como horizontales.'}else{let lat=read('lat',-90,90),lon=read('lon',-180,180),variation=read('variation',-180,180);if(!gps)throw Error('Activá el GPS para obtener la posición actual.');let fix=destinationGPS(lat,lon,norm(r2+variation),d2),res=inverse(gps.latitude,gps.longitude,fix.lat,fix.lon);distance=res.d;bearing=norm(res.b-variation);let rel=inverse(lat,lon,gps.latitude,gps.longitude);p1=localPoint(norm(rel.b-variation),rel.d);$('track').textContent=gps.heading===null?'—':gps.heading.toFixed(1)+'° V';$('speed').textContent=gps.speed===null?'—':(gps.speed*1.943844).toFixed(1)+' kt';$('mathNote').textContent='GPS: distancia y derrota geodésicas. Representación esquemática plana local; variación magnética ingresada manualmente.'}draw(p1,p2,$('view').value,$('showDme').checked);let hidden=$('hide').checked;$('bearing').textContent=hidden?'Oculta':distance<1e-7?'—':bearing.toFixed(1)+'°';$('distance').textContent=hidden?'Oculta':distance.toFixed(2)+' NM';$('error').textContent='';}catch(e){$('error').textContent=e.message;$('diagram').replaceChildren();$('bearing').textContent='—';$('distance').textContent='—'}}
+$('startGps').onclick=()=>{try{read('lat',-90,90);read('lon',-180,180);read('variation',-180,180)}catch(e){$('gpsStatus').textContent=e.message;return}if(!navigator.geolocation){$('gpsStatus').textContent='Geolocalización no disponible.';return}if(watch!==null)navigator.geolocation.clearWatch(watch);$('gpsStatus').textContent='Solicitando ubicación…';watch=navigator.geolocation.watchPosition(pos=>{gps=pos.coords;$('gpsStatus').textContent=`GPS activo · precisión estimada ${Math.round(gps.accuracy)} m · ${new Date(pos.timestamp).toLocaleTimeString('es-AR')}`;render()},err=>{$('gpsStatus').textContent='GPS: '+err.message;gps=null;render()},{enableHighAccuracy:true,maximumAge:1000,timeout:15000})};$('stopGps').onclick=()=>{if(watch!==null)navigator.geolocation.clearWatch(watch);watch=null;gps=null;$('gpsStatus').textContent='GPS detenido.';render()};function stopPlay(){if(playing!==null)clearInterval(playing);playing=null}$('play').onclick=()=>{if(mode!=='manual'||!$('simulate').checked)return;stopPlay();playing=setInterval(()=>{let n=Number($('progress').value);if(n>=100){stopPlay();return}$('progress').value=Math.min(100,n+1);render()},150)};$('pause').onclick=stopPlay;$('reset').onclick=()=>{stopPlay();$('r1').value=120;$('d1').value=40;$('r2').value=60;$('d2').value=25;$('view').value='simple';$('showDme').checked=true;$('showHold').checked=false;$('holdCourse').value='';$('holdTurn').value='right';drawHold();$('hide').checked=false;$('simulate').checked=false;$('progress').value=0;render()};$('copy').onclick=async()=>{let msg=`FIX TO FIX Trainer\nDerrota: ${$('bearing').textContent}\nDistancia: ${$('distance').textContent}`;try{await navigator.clipboard.writeText(msg)}catch(e){$('error').textContent='No se pudo copiar: '+e.message}};render();if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script></body></html>
